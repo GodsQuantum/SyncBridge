@@ -8,6 +8,7 @@ services:
       - SYS_PTRACE
     security_opt:
       - no-new-privileges:true
+      - apparmor:unconfined
     read_only: true
     init: true
     environment:

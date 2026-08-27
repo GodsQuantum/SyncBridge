@@ -63,6 +63,9 @@ func TestComposeHostExecutorInvariants(t *testing.T) {
 	if !containsAnyRenderedString(svc["security_opt"], "no-new-privileges:true", "no-new-privileges=true", "no-new-privileges") {
 		t.Error("compose missing no-new-privileges")
 	}
+	if !containsAnyRenderedString(svc["security_opt"], "apparmor:unconfined", "apparmor=unconfined") {
+		t.Error("compose missing apparmor=unconfined required for /proc/1/root host view")
+	}
 	envMap, _ := svc["environment"].(map[string]any)
 	if fmt.Sprint(envMap["SB_DATA"]) != "/config" || fmt.Sprint(envMap["SB_PORT"]) != "8787" {
 		t.Errorf("environment mismatch: %v", envMap)
@@ -174,19 +177,20 @@ func TestPublishWorkflowPinsActionsAndGatesImage(t *testing.T) {
 		"docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8",
 		"docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c",
 		"docker/login-action@dbcb813823bdd20940b903addbd779551569679f",
-		"docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302",
-		"docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
 		"docker compose --env-file deploy/syncbridge.env.example -f deploy/compose.yaml config",
 		"go test -race",
 		"node --check cmd/syncbridge/web/app.js",
 		"--cap-add SYS_PTRACE",
+		"--security-opt apparmor=unconfined",
 		"test -r /proc/1/root/etc/os-release",
 		"/proc/1/root/tmp/.syncbridge-smoke-",
 		"needs: verify",
-		"platforms: linux/amd64,linux/arm64",
-		"provenance: false",
-		"provenance: mode=min",
-		"sbom: true",
+		"docker buildx build",
+		"--platform linux/amd64,linux/arm64",
+		"--provenance=false",
+		"--provenance=mode=min",
+		"--sbom=true",
+		"ghcr.io/godsquantum/syncbridge:sha-$GITHUB_SHA",
 	} {
 		if !strings.Contains(s, want) {
 			t.Errorf("publish workflow missing %q", want)
@@ -198,8 +202,8 @@ func TestPublishWorkflowPinsActionsAndGatesImage(t *testing.T) {
 		"docker/setup-qemu-action@v",
 		"docker/setup-buildx-action@v",
 		"docker/login-action@v",
-		"docker/metadata-action@v",
-		"docker/build-push-action@v",
+		"docker/metadata-action@",
+		"docker/build-push-action@",
 	} {
 		if strings.Contains(s, forbidden) {
 			t.Errorf("publish workflow uses mutable action reference %q", forbidden)

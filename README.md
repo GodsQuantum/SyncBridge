@@ -19,7 +19,7 @@ SyncBridge runs commands, scripts, and local sync jobs in the Linux host namespa
 - **Run lifecycle** — opaque run IDs, atomic overlap reservation, timeout, TERM→KILL stop, process-group handling, bounded logs, and retained history.
 - **API v1** — revision-aware jobs, run start/list/stop, capabilities, and resumable SSE events.
 - **Remote instances** — manage several reachable SyncBridge nodes from one UI; remote credentials are encrypted at rest.
-- **Single hardened image** — read-only root filesystem, `pid: host`, `SYS_ADMIN` + `SYS_PTRACE`, no host `/etc`, `/proc`, `/home`, `/mnt`, or `docker.sock` bind mounts.
+- **Single-purpose host controller image** — read-only root filesystem, `pid: host`, `SYS_ADMIN` + `SYS_PTRACE`, default seccomp retained, no host `/etc`, `/proc`, `/home`, `/mnt`, or `docker.sock` bind mounts.
 - **Multi-arch publication** — CI verifies the code and deployment contract before publishing `linux/amd64` and `linux/arm64` images.
 
 <p align="center"><img src="docs/assets/screenshot-dashboard.svg" width="860" alt="SyncBridge dashboard"></p>
@@ -36,6 +36,7 @@ Container requirements:
 - `pid: host`;
 - `CAP_SYS_ADMIN` for namespace entry;
 - `CAP_SYS_PTRACE` for dereferencing the host filesystem view at `/proc/1/root`;
+- AppArmor disabled for this container (`apparmor=unconfined`) when AppArmor is active, because Docker's `docker-default` profile blocks the cross-profile `/proc/1/root`/host-namespace access SyncBridge is designed to perform;
 - a writable config directory mounted only at `/config`.
 
 ## Quick start
@@ -55,15 +56,16 @@ The generic example is in [`deploy/compose.yaml`](deploy/compose.yaml). Configur
 
 ## Security model
 
-SyncBridge is deliberately a privileged **host execution controller**. `pid: host` plus `CAP_SYS_ADMIN` allows it to enter host namespaces; `CAP_SYS_PTRACE` permits the ptrace-gated `/proc/1/root` filesystem view used by the folder browser and watch manager. Anyone with administrative access to SyncBridge should therefore be treated as having host-level execution capability.
+SyncBridge is deliberately a **host execution controller**, not a container sandbox. `pid: host` plus `CAP_SYS_ADMIN` allows it to enter host namespaces; `CAP_SYS_PTRACE` permits the ptrace-gated `/proc/1/root` filesystem view used by the folder browser and watch manager. On AppArmor hosts, the generic Compose also sets `apparmor=unconfined`: Docker's default profile intentionally blocks the cross-profile host access that SyncBridge requires. Anyone with administrative access to SyncBridge should therefore be treated as having host-level execution capability.
 
-The public Compose example reduces unnecessary exposure:
+This is an explicit trust tradeoff, not an additional hardening layer. The public Compose still reduces unrelated exposure:
 
 - no `privileged: true`;
 - no Docker socket;
 - no host filesystem bind mounts other than the dedicated `/config` directory;
 - read-only container root;
-- `no-new-privileges`;
+- `no-new-privileges` and Docker's default seccomp profile;
+- AppArmor unconfined only for the SyncBridge container because its purpose requires host namespace/filesystem access;
 - small tmpfs mounts for `/tmp` and `/run`.
 
 Do not expose SyncBridge directly to an untrusted network. Put it behind your authenticated reverse proxy/VPN and TLS policy. See [`SECURITY.md`](.github/SECURITY.md).

@@ -83,14 +83,14 @@ jobs:
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
       - name: Build smoke image
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
-        with:
-          context: .
-          load: true
-          tags: syncbridge:smoke
-          provenance: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker buildx build \
+            --load \
+            --tag syncbridge:smoke \
+            --provenance=false \
+            .
 
       - name: Host namespace and health smoke test
         shell: bash
@@ -105,6 +105,7 @@ jobs:
             --cap-add SYS_ADMIN \
             --cap-add SYS_PTRACE \
             --security-opt no-new-privileges=true \
+            --security-opt apparmor=unconfined \
             --read-only \
             --tmpfs /tmp:size=64m,mode=1777 \
             --tmpfs /run:size=16m,mode=0755 \
@@ -144,25 +145,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Image metadata
-        id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
-        with:
-          images: ghcr.io/godsquantum/syncbridge
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=tag
-            type=sha,format=long
-
       - name: Build and publish multi-arch image
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: mode=min
-          sbom: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          tags=(--tag "ghcr.io/godsquantum/syncbridge:sha-$GITHUB_SHA")
+
+          if [ "$GITHUB_REF" = 'refs/heads/main' ]; then
+            tags+=(--tag "ghcr.io/godsquantum/syncbridge:latest")
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            tags+=(--tag "ghcr.io/godsquantum/syncbridge:$GITHUB_REF_NAME")
+          fi
+
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --push \
+            --provenance=mode=min \
+            --sbom=true \
+            --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            "${tags[@]}" \
+            .

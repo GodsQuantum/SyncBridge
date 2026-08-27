@@ -12,12 +12,17 @@ Required container properties:
 | `pid: host` | exposes the host PID namespace and PID 1 |
 | `cap_add: SYS_ADMIN` | permits `nsenter` into the host namespaces |
 | `cap_add: SYS_PTRACE` | permits the ptrace-gated `/proc/1/root` host filesystem view |
+| `apparmor:unconfined` | avoids Docker `docker-default` blocking cross-profile `/proc/1/root` and host-namespace operations; required on AppArmor hosts for this host-controller model |
 | `read_only: true` | prevents writes to the image filesystem |
 | `no-new-privileges:true` | blocks privilege escalation through execve |
 | `/config` bind | only persistent application state mount |
 | `/tmp`, `/run` tmpfs | bounded writable runtime scratch space |
 
 Do **not** add the Docker socket, host `/proc`, host `/etc`, `/home`, or `/mnt` merely to execute jobs. Host commands run through `nsenter`; host path browsing and watches resolve through `/proc/1/root` when `pid: host` is enabled.
+
+### AppArmor trust boundary
+
+SyncBridge deliberately performs operations that Docker's default AppArmor profile is designed to stop. The generic Compose therefore sets `apparmor:unconfined` for the SyncBridge container while retaining Docker's default seccomp profile, `no-new-privileges`, a read-only rootfs, and the minimal capability set used by the host executor. Treat the SyncBridge administrative boundary as a host-administration boundary; do not rely on AppArmor isolation between SyncBridge and the host.
 
 ## Environment
 

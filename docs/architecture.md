@@ -22,7 +22,7 @@ All jobs execute in the Linux host namespaces. Triggers can be manual, SyncBridg
 
 ## Host namespace boundary
 
-The controller container runs with `pid: host`, `SYS_ADMIN`, and `SYS_PTRACE`, but not `privileged: true`. `SYS_ADMIN` permits namespace entry; `SYS_PTRACE` satisfies the kernel access check required to dereference `/proc/1/root` for PID 1.
+The controller container runs with `pid: host`, `SYS_ADMIN`, and `SYS_PTRACE`, but not `privileged: true`. `SYS_ADMIN` permits namespace entry; `SYS_PTRACE` satisfies the kernel access check required to dereference `/proc/1/root` for PID 1. On AppArmor hosts it runs with `apparmor=unconfined`, because the standard `docker-default` profile intentionally denies cross-profile host access. Docker's default seccomp profile and `no-new-privileges` remain enabled. This makes the SyncBridge admin boundary a host-administration boundary by design, not a container-isolation boundary.
 
 Process execution:
 

@@ -29,18 +29,19 @@ docker compose --env-file .env -f compose.yaml up -d
 
 L'interface écoute par défaut sur `8787`. Le premier compte enregistré devient administrateur.
 
-Le conteneur utilise `pid: host` et `CAP_SYS_ADMIN` pour entrer dans les namespaces de l'hôte, ainsi que `CAP_SYS_PTRACE` pour accéder à la vue du système de fichiers hôte via `/proc/1/root`. Le navigateur de dossiers et les watchers utilisent la vue `/proc/1/root`; il n'est donc pas nécessaire de monter `/home`, `/mnt` ou `/proc` dans le conteneur.
+Le conteneur utilise `pid: host` et `CAP_SYS_ADMIN` pour entrer dans les namespaces de l'hôte, ainsi que `CAP_SYS_PTRACE` pour accéder à la vue du système de fichiers hôte via `/proc/1/root`. Sur un hôte AppArmor, le Compose générique applique aussi `apparmor=unconfined` au seul conteneur SyncBridge : le profil Docker `docker-default` bloque précisément l'accès inter-profils à `/proc/1/root` et aux namespaces hôte que SyncBridge doit effectuer. Le navigateur de dossiers et les watchers utilisent la vue `/proc/1/root`; il n'est donc pas nécessaire de monter `/home`, `/mnt` ou `/proc` dans le conteneur.
 
 ## Modèle de sécurité
 
-SyncBridge est un contrôleur d'exécution hôte : un administrateur de SyncBridge dispose par conception d'une capacité d'exécution de niveau hôte. Il faut donc le placer derrière une politique d'accès de confiance (VPN/reverse proxy authentifié + TLS), et non l'exposer directement à Internet.
+SyncBridge est un contrôleur d'exécution hôte, pas une sandbox de sécurité : un administrateur de SyncBridge dispose par conception d'une capacité d'exécution de niveau hôte. La désactivation AppArmor pour ce conteneur est donc un compromis de confiance explicite, tandis que le profil seccomp Docker reste actif. Il faut placer SyncBridge derrière une politique d'accès de confiance (VPN/reverse proxy authentifié + TLS), et non l'exposer directement à Internet.
 
 Le Compose public applique notamment :
 
 - `user: 0:0` uniquement pour permettre l'entrée dans les namespaces ;
 - `pid: host` ;
 - `SYS_ADMIN` + `SYS_PTRACE` ;
-- `no-new-privileges` ;
+- `no-new-privileges` et le profil seccomp Docker par défaut ;
+- `apparmor=unconfined` uniquement pour SyncBridge lorsque AppArmor est actif ;
 - rootfs du conteneur en lecture seule ;
 - seulement `/config` en volume persistant ;
 - tmpfs dédiés pour `/tmp` et `/run` ;
