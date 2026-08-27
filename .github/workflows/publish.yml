@@ -1,0 +1,162 @@
+name: verify-and-publish
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: syncbridge-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: verify (Go ${{ matrix.go }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.26.7", "1.27.0"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ matrix.go }}
+          cache-dependency-path: go.sum
+
+      - name: Tool versions
+        run: |
+          go version
+          docker compose version
+          node --version
+
+      - name: Format and module consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+          unformatted="$(find cmd -type f -name '*.go' -print0 | xargs -0 gofmt -l)"
+          test -z "$unformatted" || { printf 'Unformatted Go files:\n%s\n' "$unformatted"; exit 1; }
+          go mod tidy -diff
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Tests
+        run: go test -count=1 -timeout=180s ./...
+
+      - name: Race tests
+        run: go test -race -count=1 -timeout=300s ./...
+
+      - name: Build
+        run: CGO_ENABLED=0 go build -trimpath ./cmd/syncbridge
+
+      - name: UI syntax
+        run: node --check cmd/syncbridge/web/app.js
+
+      - name: Compose semantic validation
+        run: docker compose --env-file deploy/syncbridge.env.example -f deploy/compose.yaml config >/dev/null
+
+  publish:
+    name: image smoke and publish
+    needs: verify
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Build smoke image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          load: true
+          tags: syncbridge:smoke
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Host namespace and health smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          config_dir="$RUNNER_TEMP/syncbridge-smoke-config"
+          mkdir -p "$config_dir"
+
+          docker run -d --name syncbridge-smoke \
+            --user 0:0 \
+            --pid host \
+            --cap-add SYS_ADMIN \
+            --security-opt no-new-privileges=true \
+            --read-only \
+            --tmpfs /tmp:size=64m,mode=1777 \
+            --tmpfs /run:size=16m,mode=0755 \
+            --mount "type=bind,src=$config_dir,dst=/config" \
+            --health-interval 1s \
+            --health-timeout 3s \
+            --health-start-period 1s \
+            --health-retries 10 \
+            syncbridge:smoke
+
+          trap 'docker logs syncbridge-smoke || true; docker rm -f syncbridge-smoke >/dev/null 2>&1 || true' EXIT
+
+          status=starting
+          for _ in $(seq 1 30); do
+            status="$(docker inspect -f '{{.State.Health.Status}}' syncbridge-smoke)"
+            [ "$status" = healthy ] && break
+            [ "$status" = unhealthy ] && break
+            sleep 1
+          done
+          [ "$status" = healthy ]
+
+          docker exec syncbridge-smoke /bin/sh -c 'test -r /proc/1/root/etc/os-release'
+          docker exec syncbridge-smoke /bin/sh -c 'p=/proc/1/root/tmp/.syncbridge-smoke-$$; printf ok >"$p"; test "$(cat "$p")" = ok; rm -f "$p"'
+
+          docker exec syncbridge-smoke \
+            nsenter --target 1 --mount --uts --ipc --net --pid --root --wd=/ -- \
+            /usr/bin/id -u | grep -qx '0'
+
+      - name: Login to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/godsquantum/syncbridge
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=tag
+            type=sha,format=long
+
+      - name: Build and publish multi-arch image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: mode=max
+          sbom: true

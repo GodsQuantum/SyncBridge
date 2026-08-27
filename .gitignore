@@ -1,0 +1,29 @@
+# Runtime state
+/config/
+/data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Local deployment configuration
+.env
+.env.*
+!*.env.example
+compose.override.yaml
+compose.*.private.yaml
+
+# Build output
+/bin/
+/dist/
+*.out
+coverage.*
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Local agent/workspace artifacts
+.superpowers/
+.worktrees/
+temp/

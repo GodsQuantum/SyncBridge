@@ -1,0 +1,27 @@
+services:
+  syncbridge:
+    image: ghcr.io/godsquantum/syncbridge:${SYNCBRIDGE_TAG:-latest}
+    user: "0:0"
+    pid: host
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    init: true
+    environment:
+      TZ: ${TZ:-UTC}
+      SB_DATA: /config
+      SB_PORT: "8787"
+      SB_UID: ${SYNCBRIDGE_FILE_UID:-1000}
+      SB_GID: ${SYNCBRIDGE_FILE_GID:-1000}
+      SB_IMPORT_PATHS: ${SYNCBRIDGE_IMPORT_PATHS:-}
+    ports:
+      - "${SYNCBRIDGE_HOST_PORT:-8787}:8787"
+    volumes:
+      - ${SYNCBRIDGE_CONFIG_DIR:-/opt/syncbridge}:/config
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /run:size=16m,mode=0755
+    stop_grace_period: 25s
+    restart: unless-stopped

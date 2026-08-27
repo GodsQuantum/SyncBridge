@@ -1,0 +1,111 @@
+<svg width="860" height="612" viewBox="0 0 860 612" xmlns="http://www.w3.org/2000/svg" font-family="Inter,Segoe UI,sans-serif">
+<rect width="860" height="612" fill="#0d1117"/>
+<!-- topbar -->
+<g transform="translate(28,26)">
+  <rect x="0" y="2" width="24" height="5" rx="2.5" fill="#3dd7cf"/>
+  <rect x="10" y="11" width="14" height="5" rx="2.5" fill="#3a4759"/>
+  <rect x="0" y="20" width="24" height="5" rx="2.5" fill="#9d8cf5"/>
+  <text x="34" y="14" fill="#e8eef6" font-size="18" font-weight="700">SyncBridge</text>
+  <text x="34" y="30" fill="#5a6b82" font-size="11" font-family="monospace">cron · watch · rsync · scripts</text>
+  <!-- right cluster -->
+  <g transform="translate(300,0)">
+    <rect x="0" y="0" width="150" height="26" rx="7" fill="#1b232f" stroke="#263041"/>
+    <text x="10" y="17" fill="#8b9bb0" font-size="11.5" font-family="monospace">🖥 This instance ▾</text>
+    <rect x="158" y="0" width="26" height="26" rx="7" fill="none" stroke="#263041"/><text x="171" y="18" fill="#8b9bb0" font-size="14" text-anchor="middle">＋</text>
+    <rect x="190" y="0" width="26" height="26" rx="7" fill="none" stroke="#263041"/><text x="203" y="18" fill="#8b9bb0" font-size="13" text-anchor="middle">⚙</text>
+    <rect x="222" y="0" width="26" height="26" rx="7" fill="none" stroke="#263041"/><text x="235" y="18" fill="#8b9bb0" font-size="13" text-anchor="middle">⎋</text>
+    <rect x="254" y="0" width="54" height="26" rx="7" fill="none" stroke="#263041"/><text x="281" y="17" fill="#8b9bb0" font-size="12" text-anchor="middle">🇫🇷 FR</text>
+    <rect x="314" y="0" width="78" height="26" rx="7" fill="#1b232f" stroke="#263041"/><text x="353" y="17" fill="#e8eef6" font-size="12" text-anchor="middle">API v1</text>
+    <rect x="400" y="0" width="90" height="26" rx="7" fill="#3dd7cf"/><text x="445" y="17" fill="#042927" font-size="12" font-weight="700" text-anchor="middle">+ New job</text>
+  </g>
+</g>
+<line x1="0" y1="74" x2="860" y2="74" stroke="#263041"/>
+<!-- tabs + search -->
+<g transform="translate(28,90)" font-family="monospace" font-size="12">
+  <rect x="0" y="0" width="66" height="26" rx="7" fill="#0f1c22" stroke="#3dd7cf"/><text x="12" y="17" fill="#3dd7cf">All</text><rect x="42" y="6" width="18" height="14" rx="7" fill="#186f6a"/><text x="51" y="16.5" fill="#3dd7cf" text-anchor="middle" font-size="10">5</text>
+  <rect x="74" y="0" width="74" height="26" rx="7" fill="#151b24" stroke="#263041"/><text x="86" y="17" fill="#8b9bb0">Sync</text><rect x="122" y="6" width="18" height="14" rx="7" fill="#1b232f"/><text x="131" y="16.5" fill="#5a6b82" text-anchor="middle" font-size="10">2</text>
+  <rect x="156" y="0" width="118" height="26" rx="7" fill="#151b24" stroke="#263041"/><text x="168" y="17" fill="#8b9bb0">Commands</text><rect x="248" y="6" width="18" height="14" rx="7" fill="#1b232f"/><text x="257" y="16.5" fill="#5a6b82" text-anchor="middle" font-size="10">2</text>
+  <rect x="282" y="0" width="86" height="26" rx="7" fill="#151b24" stroke="#263041"/><text x="294" y="17" fill="#8b9bb0">⏰ Cron</text><rect x="342" y="6" width="18" height="14" rx="7" fill="#1b232f"/><text x="351" y="16.5" fill="#5a6b82" text-anchor="middle" font-size="10">2</text>
+  <rect x="376" y="0" width="92" height="26" rx="7" fill="#151b24" stroke="#263041"/><text x="388" y="17" fill="#8b9bb0">👀 Watch</text><rect x="446" y="6" width="18" height="14" rx="7" fill="#1b232f"/><text x="455" y="16.5" fill="#5a6b82" text-anchor="middle" font-size="10">1</text>
+  <rect x="558" y="0" width="246" height="26" rx="7" fill="#0d1117" stroke="#263041"/><text x="570" y="17" fill="#5a6b82">Search a job…</text>
+</g>
+<!-- card 1 : sync mirror, ok -->
+<g transform="translate(28,132)">
+  <rect x="0" y="0" width="804" height="88" rx="9" fill="#151b24" stroke="#263041"/>
+  <circle cx="22" cy="26" r="5" fill="#54cd8a"/>
+  <text x="40" y="24" fill="#e8eef6" font-size="15" font-weight="600">Prod → Nightly backup</text>
+  <rect x="40" y="34" width="300" height="22" rx="5" fill="#1b232f" stroke="#263041"/>
+  <text x="48" y="49" fill="#8b9bb0" font-size="12" font-family="monospace">/mnt/prod → /mnt/nas/backup/prod</text>
+  <rect x="40" y="62" width="52" height="18" rx="5" fill="none" stroke="#5b4a26"/><text x="66" y="74" fill="#e9b455" font-size="10.5" font-family="monospace" text-anchor="middle">mirror</text>
+  <rect x="98" y="62" width="118" height="18" rx="5" fill="none" stroke="#186f6a"/><text x="157" y="74" fill="#3dd7cf" font-size="10.5" font-family="monospace" text-anchor="middle">every day 03:00</text>
+  <rect x="222" y="62" width="46" height="18" rx="5" fill="none" stroke="#263041"/><text x="245" y="74" fill="#5a6b82" font-size="10.5" font-family="monospace" text-anchor="middle">rsync</text>
+  <rect x="274" y="62" width="72" height="18" rx="5" fill="none" stroke="#263041"/><text x="310" y="74" fill="#8b9bb0" font-size="10.5" font-family="monospace" text-anchor="middle">trash ×5</text>
+  <rect x="352" y="62" width="72" height="18" rx="5" fill="none" stroke="#6b2f38"/><text x="388" y="74" fill="#e56a7d" font-size="10.5" font-family="monospace" text-anchor="middle">🔒 system</text>
+  <g transform="translate(0,14)" font-size="12">
+    <rect x="726" y="0" width="62" height="24" rx="6" fill="#3dd7cf"/><text x="757" y="16" fill="#042927" font-weight="700" text-anchor="middle">▶ Run</text>
+    <rect x="692" y="0" width="26" height="24" rx="6" fill="none" stroke="#263041"/><text x="705" y="17" fill="#8b9bb0" text-anchor="middle">🕒</text>
+    <rect x="658" y="0" width="26" height="24" rx="6" fill="none" stroke="#263041"/><text x="671" y="17" fill="#8b9bb0" text-anchor="middle">✎</text>
+    <rect x="624" y="0" width="26" height="24" rx="6" fill="none" stroke="#263041"/><text x="637" y="17" fill="#8b9bb0" text-anchor="middle">⧉</text>
+  </g>
+  <text x="40" y="76" fill="#5a6b82" font-size="11" font-family="monospace">last : 2026-03-16 03:00   ·   status : ok</text>
+</g>
+<!-- card 2 : command cron + history expanded -->
+<g transform="translate(28,232)">
+  <rect x="0" y="0" width="804" height="128" rx="9" fill="#151b24" stroke="#263041"/>
+  <circle cx="22" cy="26" r="5" fill="#54cd8a"/>
+  <text x="40" y="24" fill="#e8eef6" font-size="15" font-weight="600">Nightly Docker cleanup</text>
+  <rect x="40" y="34" width="262" height="22" rx="5" fill="#1b232f" stroke="#263041"/>
+  <text x="48" y="49" fill="#8b9bb0" font-size="12" font-family="monospace">$ docker system prune -af --volumes</text>
+  <rect x="40" y="62" width="66" height="18" rx="5" fill="none" stroke="#263041"/><text x="73" y="74" fill="#8b9bb0" font-size="10.5" font-family="monospace" text-anchor="middle">command</text>
+  <rect x="112" y="62" width="86" height="18" rx="5" fill="none" stroke="#186f6a"/><text x="155" y="74" fill="#3dd7cf" font-size="10.5" font-family="monospace" text-anchor="middle">Sunday 04:00</text>
+  <g transform="translate(0,14)" font-size="12">
+    <rect x="726" y="0" width="62" height="24" rx="6" fill="#3dd7cf"/><text x="757" y="16" fill="#042927" font-weight="700" text-anchor="middle">▶ Run</text>
+    <rect x="692" y="0" width="26" height="24" rx="6" fill="#0f1c22" stroke="#3dd7cf"/><text x="705" y="17" fill="#3dd7cf" text-anchor="middle">🕒</text>
+    <rect x="658" y="0" width="26" height="24" rx="6" fill="none" stroke="#263041"/><text x="671" y="17" fill="#8b9bb0" text-anchor="middle">✎</text>
+    <rect x="624" y="0" width="26" height="24" rx="6" fill="none" stroke="#263041"/><text x="637" y="17" fill="#8b9bb0" text-anchor="middle">⧉</text>
+  </g>
+  <!-- history rows -->
+  <g font-family="monospace" font-size="11">
+    <rect x="40" y="90" width="34" height="15" rx="4" fill="none" stroke="#2b5c42"/><text x="57" y="101" fill="#54cd8a" font-size="9.5" text-anchor="middle">OK</text>
+    <text x="84" y="101" fill="#8b9bb0">2026-03-16 04:00</text><text x="230" y="101" fill="#5a6b82">8s</text>
+    <rect x="40" y="108" width="34" height="15" rx="4" fill="none" stroke="#2b5c42"/><text x="57" y="119" fill="#54cd8a" font-size="9.5" text-anchor="middle">OK</text>
+    <text x="84" y="119" fill="#8b9bb0">2026-03-15 04:00</text><text x="230" y="119" fill="#5a6b82">7s</text>
+    <rect x="300" y="90" width="46" height="15" rx="4" fill="none" stroke="#6b2f38"/><text x="323" y="101" fill="#e56a7d" font-size="9.5" text-anchor="middle">ERROR</text>
+    <text x="356" y="101" fill="#8b9bb0">2026-03-14 04:00</text><text x="502" y="101" fill="#5a6b82">12s</text>
+    <text x="300" y="119" fill="#e9b455">↳ exit 1 : no space left on device</text>
+  </g>
+</g>
+<!-- card 3 : watch running -->
+<g transform="translate(28,372)">
+  <rect x="0" y="0" width="804" height="98" rx="9" fill="#151b24" stroke="#263041"/>
+  <circle cx="22" cy="26" r="5" fill="#3dd7cf"/><circle cx="22" cy="26" r="8.5" fill="none" stroke="#3dd7cf" stroke-opacity="0.5"/>
+  <text x="40" y="24" fill="#e8eef6" font-size="15" font-weight="600">Transcribe voice notes</text>
+  <rect x="40" y="34" width="236" height="22" rx="5" fill="#1b232f" stroke="#263041"/>
+  <text x="48" y="49" fill="#8b9bb0" font-size="12" font-family="monospace">$ /srv/scripts/transcribe.sh</text>
+  <rect x="40" y="62" width="66" height="18" rx="5" fill="none" stroke="#263041"/><text x="73" y="74" fill="#8b9bb0" font-size="10.5" font-family="monospace" text-anchor="middle">command</text>
+  <rect x="112" y="62" width="150" height="18" rx="5" fill="none" stroke="#186f6a"/><text x="187" y="74" fill="#3dd7cf" font-size="10.5" font-family="monospace" text-anchor="middle">watches *.m4a, *.mp3</text>
+  <g transform="translate(0,14)" font-size="12">
+    <rect x="672" y="0" width="60" height="24" rx="6" fill="none" stroke="#6b2f38"/><text x="702" y="16" fill="#e56a7d" text-anchor="middle">■ Kill</text>
+    <rect x="740" y="0" width="48" height="24" rx="6" fill="#3dd7cf" opacity="0.4"/><text x="764" y="16" fill="#042927" font-weight="700" text-anchor="middle">▶</text>
+  </g>
+  <text x="40" y="86" fill="#8b9bb0" font-size="11" font-family="monospace">42%   ⏱ 6s   3.1MB/s   reste ~0:12</text>
+  <rect x="300" y="80" width="464" height="6" rx="3" fill="#1b232f" stroke="#263041"/>
+  <rect x="300" y="80" width="195" height="6" rx="3" fill="#3dd7cf"/>
+</g>
+<!-- card 4 : accumulate constant -->
+<g transform="translate(28,482)">
+  <rect x="0" y="0" width="804" height="88" rx="9" fill="#151b24" stroke="#263041"/>
+  <circle cx="22" cy="26" r="5" fill="#54cd8a"/>
+  <text x="40" y="24" fill="#e8eef6" font-size="15" font-weight="600">Documents → Paperless consume</text>
+  <rect x="40" y="34" width="300" height="22" rx="5" fill="#1b232f" stroke="#263041"/>
+  <text x="48" y="49" fill="#8b9bb0" font-size="12" font-family="monospace">/mnt/cloud/docs → /mnt/paperless/consume</text>
+  <rect x="40" y="62" width="80" height="18" rx="5" fill="none" stroke="#2b5c42"/><text x="80" y="74" fill="#54cd8a" font-size="10.5" font-family="monospace" text-anchor="middle">accumulate</text>
+  <rect x="126" y="62" width="66" height="18" rx="5" fill="none" stroke="#186f6a"/><text x="159" y="74" fill="#3dd7cf" font-size="10.5" font-family="monospace" text-anchor="middle">constant</text>
+  <rect x="198" y="62" width="46" height="18" rx="5" fill="none" stroke="#263041"/><text x="221" y="74" fill="#5a6b82" font-size="10.5" font-family="monospace" text-anchor="middle">rsync</text>
+  <g transform="translate(0,14)" font-size="12">
+    <rect x="726" y="0" width="62" height="24" rx="6" fill="#3dd7cf"/><text x="757" y="16" fill="#042927" font-weight="700" text-anchor="middle">▶ Run</text>
+    <rect x="692" y="0" width="26" height="24" rx="6" fill="none" stroke="#263041"/><text x="705" y="17" fill="#8b9bb0" text-anchor="middle">🕒</text>
+    <rect x="658" y="0" width="26" height="24" rx="6" fill="none" stroke="#263041"/><text x="671" y="17" fill="#8b9bb0" text-anchor="middle">✎</text>
+  </g>
+</g>
+</svg>

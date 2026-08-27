@@ -1,0 +1,117 @@
+#!/bin/sh
+set -eu
+
+fail() {
+    printf '%s\n' "$1" >&2
+    exit 126
+}
+
+single_line() {
+    case "$1" in
+        *'
+'*) return 1 ;;
+        *) return 0 ;;
+    esac
+}
+
+validate_canonical_path() {
+    expected_path=$1
+    resolved_path=$('/usr/bin/readlink' '-m' '--' "$expected_path") || fail 'path cannot be canonicalized'
+    [ "$resolved_path" = "$expected_path" ] || fail 'path is no longer canonical'
+}
+
+capture_path_snapshot() {
+    snapshot_path=$1
+    if [ -e "$snapshot_path" ] || [ -L "$snapshot_path" ]; then
+        '/usr/bin/stat' '-c' '%d:%i:%f:%u:%g' '--' "$snapshot_path" || return 1
+    else
+        printf '%s\n' missing
+    fi
+}
+
+PATH='/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+export PATH
+umask 0027
+validate_canonical_path '/srv'
+validate_canonical_path '/srv/source'
+validate_canonical_path '/srv/destination'
+cd '/srv'
+
+source_path='/srv/source'
+destination_path='/srv/destination'
+[ -d "$source_path" ] || fail 'sync source is missing'
+if [ -e "$destination_path" ] || [ -L "$destination_path" ]; then [ -d "$destination_path" ] || fail 'sync destination is not a directory'; fi
+source_snapshot=$(capture_path_snapshot "$source_path") || fail 'sync source identity cannot be read'
+destination_snapshot=$(capture_path_snapshot "$destination_path") || fail 'sync destination identity cannot be read'
+single_line "$source_snapshot" && single_line "$destination_snapshot" || fail 'sync path identity is ambiguous'
+
+expected_user='backup'
+expected_uid='1001'
+expected_group='backup'
+expected_gid='1002'
+passwd_entry=$('/usr/bin/getent' 'passwd' "$expected_user") || fail 'fixed host account name cannot be resolved'
+single_line "$passwd_entry" || fail 'fixed host account name is ambiguous'
+IFS=: read -r run_user _ run_uid account_gid _ run_home run_shell <<EOF
+$passwd_entry
+EOF
+case "$run_uid" in ''|*[!0-9]*) fail 'fixed host account UID is invalid' ;; esac
+case "$account_gid" in ''|*[!0-9]*) fail 'fixed host account GID is invalid' ;; esac
+[ "$run_user" = "$expected_user" ] && [ "$run_uid" = "$expected_uid" ] || fail 'fixed host account name and UID disagree'
+[ -n "$run_home" ] && [ -n "$run_shell" ] || fail 'fixed host account is incomplete'
+passwd_by_uid=$('/usr/bin/getent' 'passwd' "$expected_uid") || fail 'fixed host account UID cannot be resolved'
+single_line "$passwd_by_uid" || fail 'fixed host account UID is ambiguous'
+[ "$passwd_by_uid" = "$passwd_entry" ] || fail 'fixed host account UID was reassigned'
+
+group_entry=$('/usr/bin/getent' 'group' "$expected_group") || fail 'fixed host group name cannot be resolved'
+single_line "$group_entry" || fail 'fixed host group name is ambiguous'
+IFS=: read -r run_group _ run_gid _ <<EOF
+$group_entry
+EOF
+case "$run_gid" in ''|*[!0-9]*) fail 'fixed host group GID is invalid' ;; esac
+[ "$run_group" = "$expected_group" ] && [ "$run_gid" = "$expected_gid" ] || fail 'fixed host group name and GID disagree'
+group_by_gid=$('/usr/bin/getent' 'group' "$expected_gid") || fail 'fixed host group GID cannot be resolved'
+single_line "$group_by_gid" || fail 'fixed host group GID is ambiguous'
+[ "$group_by_gid" = "$group_entry" ] || fail 'fixed host group GID was reassigned'
+
+source_path='/srv/source'
+[ -d "$source_path" ] || fail 'destructive sync source is missing'
+first_entry=$('/usr/bin/find' "$source_path" '-mindepth' '1' '-maxdepth' '1' '-print' '-quit') || fail 'destructive sync source cannot be read'
+[ -n "$first_entry" ] || fail 'destructive sync source is empty'
+
+validate_canonical_path "$source_path"
+validate_canonical_path "$destination_path"
+final_source_snapshot=$(capture_path_snapshot "$source_path") || fail 'sync source identity cannot be revalidated'
+final_destination_snapshot=$(capture_path_snapshot "$destination_path") || fail 'sync destination identity cannot be revalidated'
+[ "$final_source_snapshot" = "$source_snapshot" ] || fail 'sync source changed before privilege drop'
+[ "$final_destination_snapshot" = "$destination_snapshot" ] || fail 'sync destination changed before privilege drop'
+[ -d "$source_path" ] || fail 'sync source type changed before privilege drop'
+if [ "$destination_snapshot" != missing ]; then [ -d "$destination_path" ] || fail 'sync destination type changed before privilege drop'; fi
+source_path='/srv/source'
+[ -d "$source_path" ] || fail 'destructive sync source is missing'
+first_entry=$('/usr/bin/find' "$source_path" '-mindepth' '1' '-maxdepth' '1' '-print' '-quit') || fail 'destructive sync source cannot be read'
+[ -n "$first_entry" ] || fail 'destructive sync source is empty'
+
+exec '/usr/bin/setpriv' '--reuid' "$run_uid" '--regid' "$run_gid" '--init-groups' '--reset-env' '--' \
+    '/usr/bin/env' '-i' '--' \
+    "HOME=$run_home" \
+    "USER=$run_user" \
+    "LOGNAME=$run_user" \
+    "SHELL=$run_shell" \
+    'CUSTOM=value with spaces' \
+    'LANG=C' \
+    'LC_ALL=C' \
+    'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' \
+    'SYNCBRIDGE_DRY_RUN=false' \
+    'SYNCBRIDGE_JOB_ID=8' \
+    'SYNCBRIDGE_JOB_REVISION=4' \
+    'SYNCBRIDGE_RUN_ID=run-2' \
+    'SYNCBRIDGE_RUN_ORIGIN=cron' \
+    'TZ=Europe/Paris' \
+    'rsync' \
+    '-a' \
+    '--info=progress2,stats2' \
+    '--human-readable' \
+    '--delete' \
+    '--' \
+    '/srv/source/' \
+    '/srv/destination/'
