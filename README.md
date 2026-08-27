@@ -19,7 +19,7 @@ SyncBridge runs commands, scripts, and local sync jobs in the Linux host namespa
 - **Run lifecycle** — opaque run IDs, atomic overlap reservation, timeout, TERM→KILL stop, process-group handling, bounded logs, and retained history.
 - **API v1** — revision-aware jobs, run start/list/stop, capabilities, and resumable SSE events.
 - **Remote instances** — manage several reachable SyncBridge nodes from one UI; remote credentials are encrypted at rest.
-- **Single hardened image** — read-only root filesystem, `pid: host`, `SYS_ADMIN`, no host `/etc`, `/proc`, `/home`, `/mnt`, or `docker.sock` bind mounts.
+- **Single hardened image** — read-only root filesystem, `pid: host`, `SYS_ADMIN` + `SYS_PTRACE`, no host `/etc`, `/proc`, `/home`, `/mnt`, or `docker.sock` bind mounts.
 - **Multi-arch publication** — CI verifies the code and deployment contract before publishing `linux/amd64` and `linux/arm64` images.
 
 <p align="center"><img src="docs/assets/screenshot-dashboard.svg" width="860" alt="SyncBridge dashboard"></p>
@@ -35,6 +35,7 @@ Container requirements:
 - Docker Engine / compatible Compose implementation;
 - `pid: host`;
 - `CAP_SYS_ADMIN` for namespace entry;
+- `CAP_SYS_PTRACE` for dereferencing the host filesystem view at `/proc/1/root`;
 - a writable config directory mounted only at `/config`.
 
 ## Quick start
@@ -54,7 +55,7 @@ The generic example is in [`deploy/compose.yaml`](deploy/compose.yaml). Configur
 
 ## Security model
 
-SyncBridge is deliberately a privileged **host execution controller**. `pid: host` plus `CAP_SYS_ADMIN` allows it to enter host namespaces, and `/proc/1/root` provides the filesystem view used by the folder browser and watch manager. Anyone with administrative access to SyncBridge should therefore be treated as having host-level execution capability.
+SyncBridge is deliberately a privileged **host execution controller**. `pid: host` plus `CAP_SYS_ADMIN` allows it to enter host namespaces; `CAP_SYS_PTRACE` permits the ptrace-gated `/proc/1/root` filesystem view used by the folder browser and watch manager. Anyone with administrative access to SyncBridge should therefore be treated as having host-level execution capability.
 
 The public Compose example reduces unnecessary exposure:
 

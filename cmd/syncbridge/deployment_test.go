@@ -57,6 +57,9 @@ func TestComposeHostExecutorInvariants(t *testing.T) {
 	if !containsRenderedString(svc["cap_add"], "SYS_ADMIN") {
 		t.Error("compose missing SYS_ADMIN")
 	}
+	if !containsRenderedString(svc["cap_add"], "SYS_PTRACE") {
+		t.Error("compose missing SYS_PTRACE required for /proc/1/root access")
+	}
 	if !containsAnyRenderedString(svc["security_opt"], "no-new-privileges:true", "no-new-privileges=true", "no-new-privileges") {
 		t.Error("compose missing no-new-privileges")
 	}
@@ -176,11 +179,13 @@ func TestPublishWorkflowPinsActionsAndGatesImage(t *testing.T) {
 		"docker compose --env-file deploy/syncbridge.env.example -f deploy/compose.yaml config",
 		"go test -race",
 		"node --check cmd/syncbridge/web/app.js",
+		"--cap-add SYS_PTRACE",
 		"test -r /proc/1/root/etc/os-release",
 		"/proc/1/root/tmp/.syncbridge-smoke-",
 		"needs: verify",
 		"platforms: linux/amd64,linux/arm64",
-		"provenance: mode=max",
+		"provenance: false",
+		"provenance: mode=min",
 		"sbom: true",
 	} {
 		if !strings.Contains(s, want) {

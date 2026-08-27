@@ -5,6 +5,7 @@ services:
     pid: host
     cap_add:
       - SYS_ADMIN
+      - SYS_PTRACE
     security_opt:
       - no-new-privileges:true
     read_only: true

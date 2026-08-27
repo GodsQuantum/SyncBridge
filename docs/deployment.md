@@ -11,6 +11,7 @@ Required container properties:
 | `user: "0:0"` | allows namespace operations while persisted files are explicitly owned by `SB_UID:SB_GID` |
 | `pid: host` | exposes the host PID namespace and PID 1 |
 | `cap_add: SYS_ADMIN` | permits `nsenter` into the host namespaces |
+| `cap_add: SYS_PTRACE` | permits the ptrace-gated `/proc/1/root` host filesystem view |
 | `read_only: true` | prevents writes to the image filesystem |
 | `no-new-privileges:true` | blocks privilege escalation through execve |
 | `/config` bind | only persistent application state mount |

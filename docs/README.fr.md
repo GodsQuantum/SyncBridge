@@ -29,7 +29,7 @@ docker compose --env-file .env -f compose.yaml up -d
 
 L'interface écoute par défaut sur `8787`. Le premier compte enregistré devient administrateur.
 
-Le conteneur utilise `pid: host` et `CAP_SYS_ADMIN` pour entrer dans les namespaces de l'hôte. Le navigateur de dossiers et les watchers utilisent la vue `/proc/1/root`; il n'est donc pas nécessaire de monter `/home`, `/mnt` ou `/proc` dans le conteneur.
+Le conteneur utilise `pid: host` et `CAP_SYS_ADMIN` pour entrer dans les namespaces de l'hôte, ainsi que `CAP_SYS_PTRACE` pour accéder à la vue du système de fichiers hôte via `/proc/1/root`. Le navigateur de dossiers et les watchers utilisent la vue `/proc/1/root`; il n'est donc pas nécessaire de monter `/home`, `/mnt` ou `/proc` dans le conteneur.
 
 ## Modèle de sécurité
 
@@ -39,7 +39,7 @@ Le Compose public applique notamment :
 
 - `user: 0:0` uniquement pour permettre l'entrée dans les namespaces ;
 - `pid: host` ;
-- `SYS_ADMIN` ;
+- `SYS_ADMIN` + `SYS_PTRACE` ;
 - `no-new-privileges` ;
 - rootfs du conteneur en lecture seule ;
 - seulement `/config` en volume persistant ;

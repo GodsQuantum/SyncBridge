@@ -22,7 +22,7 @@ All jobs execute in the Linux host namespaces. Triggers can be manual, SyncBridg
 
 ## Host namespace boundary
 
-The controller container runs with `pid: host` and `SYS_ADMIN`, but not `privileged: true`.
+The controller container runs with `pid: host`, `SYS_ADMIN`, and `SYS_PTRACE`, but not `privileged: true`. `SYS_ADMIN` permits namespace entry; `SYS_PTRACE` satisfies the kernel access check required to dereference `/proc/1/root` for PID 1.
 
 Process execution:
 

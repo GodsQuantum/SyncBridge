@@ -88,6 +88,7 @@ jobs:
           context: .
           load: true
           tags: syncbridge:smoke
+          provenance: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -102,6 +103,7 @@ jobs:
             --user 0:0 \
             --pid host \
             --cap-add SYS_ADMIN \
+            --cap-add SYS_PTRACE \
             --security-opt no-new-privileges=true \
             --read-only \
             --tmpfs /tmp:size=64m,mode=1777 \
@@ -124,9 +126,13 @@ jobs:
           done
           [ "$status" = healthy ]
 
+          echo 'CHECK host-root-read'
           docker exec syncbridge-smoke /bin/sh -c 'test -r /proc/1/root/etc/os-release'
+
+          echo 'CHECK host-root-write'
           docker exec syncbridge-smoke /bin/sh -c 'p=/proc/1/root/tmp/.syncbridge-smoke-$$; printf ok >"$p"; test "$(cat "$p")" = ok; rm -f "$p"'
 
+          echo 'CHECK nsenter-root'
           docker exec syncbridge-smoke \
             nsenter --target 1 --mount --uts --ipc --net --pid --root --wd=/ -- \
             /usr/bin/id -u | grep -qx '0'
@@ -158,5 +164,5 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          provenance: mode=max
+          provenance: mode=min
           sbom: true
