@@ -247,6 +247,7 @@ func requireAuth(next http.Handler) http.Handler {
 		}
 		data, _ := webFS.ReadFile("web/auth.html")
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-cache")
 		w.Write(data)
 	})
 }
