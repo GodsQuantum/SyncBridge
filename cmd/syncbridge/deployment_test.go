@@ -120,7 +120,11 @@ func TestDockerfileHostExecutorRuntime(t *testing.T) {
 	}
 	s := string(b)
 	for _, want := range []string{
+		"FROM node:26.8.2-alpine3.24@sha256:ef24c5053d50fdc3e4e56eb4e7ddb7861874ab0fdc797046ba897581deb8e868 AS web",
+		"npm ci --ignore-scripts",
+		"npm run build",
 		"FROM golang:1.27.1-alpine3.24@sha256:f86f1a6701e3dcc445fec097a42f78b758f15950ccf032c2d3e54e2754d32fdb AS build",
+		"COPY --from=web /src/cmd/syncbridge/web ./cmd/syncbridge/web",
 		"FROM alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b",
 		"util-linux-misc",
 		"ca-certificates",
@@ -174,14 +178,19 @@ func TestPublishWorkflowPinsActionsAndGatesImage(t *testing.T) {
 	for _, want := range []string{
 		"actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
 		"actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e",
+		"actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
 		"docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8",
 		"docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e",
 		"docker/login-action@dbcb813823bdd20940b903addbd779551569679f",
 		"docker compose --env-file deploy/syncbridge.env.example -f deploy/compose.yaml config",
 		"go mod verify",
-		"golang.org/x/vuln/cmd/govulncheck@v1.1.4",
+		"golang.org/x/vuln/cmd/govulncheck@v1.8.0",
 		"go test -race",
-		"node --check cmd/syncbridge/web/app.js",
+		"npm ci --ignore-scripts",
+		"npm run check",
+		"npm run test:run",
+		"npm run build",
+		"git diff --exit-code -- cmd/syncbridge/web",
 		"--cap-add SYS_PTRACE",
 		"--security-opt apparmor=unconfined",
 		"test -r /proc/1/root/etc/os-release",
@@ -201,6 +210,7 @@ func TestPublishWorkflowPinsActionsAndGatesImage(t *testing.T) {
 	for _, forbidden := range []string{
 		"actions/checkout@v",
 		"actions/setup-go@v",
+		"actions/setup-node@v",
 		"docker/setup-qemu-action@v",
 		"docker/setup-buildx-action@v",
 		"docker/login-action@v",

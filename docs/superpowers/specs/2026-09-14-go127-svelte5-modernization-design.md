@@ -15,7 +15,7 @@ Modernize SyncBridge without changing its core deployment philosophy: one harden
 - SvelteKit 2.70.3.
 - adapter-static 3.0.10.
 - Vite 8.3.0.
-- TypeScript 7.0.2.
+- TypeScript 6.0.3.
 - Node 26.8.2 for build tooling only.
 
 ## Architecture
@@ -55,7 +55,7 @@ Generated frontend assets stay committed so a source checkout can still compile 
 - Production verification includes Svelte check/build, Go vet/test/race, container image build, and HTTP smoke tests.
 
 ## Workspace policy
-- `/home/arezki/Documents/Projets/HomeLab/SyncBridge/sync` is the canonical clean `main` checkout synced to GitHub.
-- Development occurs in `/home/arezki/Documents/Projets/HomeLab/SyncBridge/.worktrees/modernize` on `feat/go127-svelte5`.
+- `sync/` is the canonical clean `main` checkout synced to GitHub.
+- Development occurs in `.worktrees/modernize/` on `feat/go127-svelte5`.
 - Temporary investigation artifacts stay under the project workspace and are deleted when no longer useful.
 - Historical duplicate trees/archives are removed only after confirming they contain no unique useful state.

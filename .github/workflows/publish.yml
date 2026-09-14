@@ -32,11 +32,37 @@ jobs:
           go-version: ${{ matrix.go }}
           cache-dependency-path: go.sum
 
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 26.8.2
+          cache: npm
+          cache-dependency-path: webui/package-lock.json
+
       - name: Tool versions
         run: |
           go version
           docker compose version
           node --version
+          npm --version
+
+      - name: Frontend dependencies
+        working-directory: webui
+        run: npm ci --ignore-scripts
+
+      - name: Frontend checks
+        working-directory: webui
+        run: |
+          npm run check
+          npm run test:run
+          npm audit --omit=dev
+
+      - name: Frontend reproducible build
+        run: |
+          cd webui
+          npm run build
+          cd ..
+          git diff --exit-code -- cmd/syncbridge/web
 
       - name: Format and module consistency
         shell: bash
@@ -53,7 +79,7 @@ jobs:
         run: go vet ./...
 
       - name: Vulnerability scan
-        run: go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
 
       - name: Tests
         run: go test -count=1 -timeout=180s ./...
@@ -63,9 +89,6 @@ jobs:
 
       - name: Build
         run: CGO_ENABLED=0 go build -trimpath ./cmd/syncbridge
-
-      - name: UI syntax
-        run: node --check cmd/syncbridge/web/app.js
 
       - name: Compose semantic validation
         run: docker compose --env-file deploy/syncbridge.env.example -f deploy/compose.yaml config >/dev/null

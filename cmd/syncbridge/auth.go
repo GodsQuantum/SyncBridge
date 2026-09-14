@@ -237,7 +237,7 @@ func apiAuthLogout(w http.ResponseWriter, r *http.Request) {
 func requireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Path
-		if strings.HasPrefix(p, "/api/auth/") || validSession(r) {
+		if strings.HasPrefix(p, "/api/auth/") || strings.HasPrefix(p, "/_app/") || validSession(r) {
 			next.ServeHTTP(w, r)
 			return
 		}

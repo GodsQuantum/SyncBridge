@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -241,4 +243,32 @@ func TestV1EventsReplaysAfterLastEventID(t *testing.T) {
 	if !strings.Contains(string(buf[:n]), "id: "+strconv.FormatUint(firstEvent.ID, 10)) {
 		t.Fatalf("sse=%q", buf[:n])
 	}
+}
+
+func TestV1JobHistoryReturnsPersistedRecords(t *testing.T) {
+	app, _ := newHTTPTestApp(t, "skip")
+	app.Runs.historyPath = filepath.Join(t.TempDir(), "history.json")
+	payload := `{"1":[{"ts":"2026-09-14T00:00:00Z","status":"succeeded","dur":2,"note":""}]}`
+	if err := os.WriteFile(app.Runs.historyPath, []byte(payload), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	s := httptest.NewServer(app.Handler())
+	defer s.Close()
+	resp := requestJSON(t, s.Client(), http.MethodGet, s.URL+"/api/v1/jobs/1/history", "", nil)
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("history=%d %s", resp.StatusCode, b)
+	}
+	var records []RunRecord
+	decodeResponseJSON(t, resp, &records)
+	if len(records) != 1 || records[0].Status != "succeeded" || records[0].Dur != 2 {
+		t.Fatalf("records=%#v", records)
+	}
+
+	resp = requestJSON(t, s.Client(), http.MethodGet, s.URL+"/api/v1/jobs/999/history", "", nil)
+	if resp.StatusCode != http.StatusNotFound {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("missing history=%d %s", resp.StatusCode, b)
+	}
+	resp.Body.Close()
 }
