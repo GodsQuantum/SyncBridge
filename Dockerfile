@@ -2,7 +2,7 @@
 # SyncBridge vNext — host executor controller only.
 # Sync engines and administrative tools execute on the host through nsenter;
 # they deliberately do not live in this image.
-FROM golang:1.26.7-alpine3.24@sha256:28d89ee9cc0ff9fec75c82ca201e6bf7fdf9a679d4b7b24dfa04f2bb766bb468 AS build
+FROM golang:1.27.1-alpine3.24@sha256:f86f1a6701e3dcc445fec097a42f78b758f15950ccf032c2d3e54e2754d32fdb AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \
