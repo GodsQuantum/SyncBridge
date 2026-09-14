@@ -6,7 +6,7 @@
 
 **Architecture:** SvelteKit prerenders into the Go embedded web directory. Core job/run traffic uses API v1 and global SSE; legacy endpoints remain only for subsystems without v1 equivalents.
 
-**Tech Stack:** Go 1.27.1, Svelte 5.57.0, SvelteKit 2.70.3, adapter-static 3.0.10, Vite 8.3.0, TypeScript 7.0.2, Vitest 5.0.0.
+**Tech Stack:** Go 1.27.1, Svelte 5.57.0, SvelteKit 2.70.3, adapter-static 3.0.10, Vite 8.3.0, TypeScript 6.0.3, Vitest 5.0.0.
 
 **Spec:** `docs/superpowers/specs/2026-09-14-go127-svelte5-modernization-design.md`
 

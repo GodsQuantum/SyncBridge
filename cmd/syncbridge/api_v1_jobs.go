@@ -57,6 +57,10 @@ func (a *App) handleV1Job(w http.ResponseWriter, r *http.Request) {
 		a.handleV1JobRuns(w, r, id)
 		return
 	}
+	if len(parts) == 2 && parts[1] == "history" {
+		a.handleV1JobHistory(w, r, id)
+		return
+	}
 	if len(parts) != 1 {
 		writeAPIError(w, 404, "not_found", "resource not found")
 		return
@@ -117,6 +121,30 @@ func (a *App) handleV1Job(w http.ResponseWriter, r *http.Request) {
 	default:
 		requireMethod(w, r, http.MethodGet, http.MethodPut, http.MethodDelete)
 	}
+}
+
+func (a *App) handleV1JobHistory(w http.ResponseWriter, r *http.Request, id int) {
+	if !requireMethod(w, r, http.MethodGet) {
+		return
+	}
+	if a == nil || a.Jobs == nil || a.Runs == nil {
+		writeAPIError(w, http.StatusInternalServerError, "not_configured", "history service is unavailable")
+		return
+	}
+	if _, ok := a.Jobs.Get(id); !ok {
+		mapServiceError(w, ErrJobNotFound)
+		return
+	}
+	history, err := loadHistoryAt(a.Runs.historyPath)
+	if err != nil {
+		writeAPIError(w, http.StatusInternalServerError, "history_unavailable", "run history is unavailable")
+		return
+	}
+	records := history[strconv.Itoa(id)]
+	if records == nil {
+		records = []RunRecord{}
+	}
+	writeJSONStatus(w, http.StatusOK, records)
 }
 
 func (a *App) handleV1JobRuns(w http.ResponseWriter, r *http.Request, id int) {

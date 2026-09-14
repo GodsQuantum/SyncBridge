@@ -27,3 +27,7 @@ coverage.*
 .superpowers/
 .worktrees/
 temp/
+
+# Frontend build workspace
+/webui/node_modules/
+/webui/.svelte-kit/

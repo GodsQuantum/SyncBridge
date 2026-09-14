@@ -111,12 +111,13 @@ Primary endpoints:
 - `GET|POST /api/v1/jobs`
 - `GET|PUT|DELETE /api/v1/jobs/{id}`
 - `GET|POST /api/v1/jobs/{id}/runs`
+- `GET /api/v1/jobs/{id}/history`
 - `GET /api/v1/runs/{runID}`
 - `POST /api/v1/runs/{runID}/stop`
 - `GET /api/v1/events`
 - `GET /api/v1/capabilities`
 
-Job mutation uses persisted revisions/ETags. The current web UI also uses compatibility adapters under `/api/jobs`; they delegate to the same repository and run service rather than maintaining a second execution state.
+Job mutation uses persisted revisions/ETags. The Svelte UI uses API v1 for jobs/runs and `/api/v1/events` for live state. Compatibility endpoints remain only for subsystems that do not yet have v1 equivalents (system import, remotes, settings, and auth).
 
 ## Development
 
@@ -125,7 +126,12 @@ go test ./...
 go test -race ./...
 go vet ./...
 go build ./cmd/syncbridge
-node --check cmd/syncbridge/web/app.js
+
+cd webui
+npm ci
+npm run check
+npm run test:run
+npm run build
 ```
 
 The publish workflow additionally validates the rendered Compose model, builds and smoke-tests the image, verifies host namespace/filesystem access, then publishes the multi-architecture image.

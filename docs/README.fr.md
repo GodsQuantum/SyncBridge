@@ -54,12 +54,13 @@ Voir [`deployment.md`](deployment.md) et [`architecture.md`](architecture.md).
 - `GET|POST /api/v1/jobs`
 - `GET|PUT|DELETE /api/v1/jobs/{id}`
 - `GET|POST /api/v1/jobs/{id}/runs`
+- `GET /api/v1/jobs/{id}/history`
 - `GET /api/v1/runs/{runID}`
 - `POST /api/v1/runs/{runID}/stop`
 - `GET /api/v1/events`
 - `GET /api/v1/capabilities`
 
-Les mutations de jobs utilisent les révisions persistées/ETag. Les routes de compatibilité utilisées par l'UI délèguent aux mêmes services vNext : il n'y a plus de seconde map d'exécution parallèle.
+Les mutations de jobs utilisent les révisions persistées/ETag. L'UI Svelte utilise l'API v1 pour les jobs/runs et `/api/v1/events` pour l'état live. Les routes de compatibilité ne restent que pour les sous-systèmes sans équivalent v1 (import système, remotes, réglages et auth).
 
 ## Développement
 
@@ -68,5 +69,10 @@ go test ./...
 go test -race ./...
 go vet ./...
 go build ./cmd/syncbridge
-node --check cmd/syncbridge/web/app.js
+
+cd webui
+npm ci
+npm run check
+npm run test:run
+npm run build
 ```

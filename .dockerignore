@@ -5,3 +5,8 @@
 /syncbridge
 /config
 jobs.json
+/webui/node_modules
+/webui/.svelte-kit
+/cmd/syncbridge/web
+/.worktrees
+/temp
