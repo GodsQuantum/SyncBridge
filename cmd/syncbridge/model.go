@@ -177,6 +177,16 @@ func cloneJob(job Job) Job {
 	return job
 }
 
+// jobWatchSource returns the single canonical watch root used by every
+// scheduler backend. Sync jobs naturally watch their transfer source; command
+// and script jobs use the explicit top-level source selected in the editor.
+func jobWatchSource(job Job) string {
+	if job.Action.Type == ActionSync {
+		return job.Action.Sync.Source
+	}
+	return job.Source
+}
+
 // MarshalJSON preserves the v1 wire shape for the still-active compatibility
 // handlers. Repository-owned v2 jobs always carry SchemaVersion 2.
 func (job Job) MarshalJSON() ([]byte, error) {

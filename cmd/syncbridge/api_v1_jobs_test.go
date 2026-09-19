@@ -61,6 +61,36 @@ func decodeResponseJSON(t *testing.T, resp *http.Response, dst any) {
 	}
 }
 
+func TestNormalizeV2JobUsesOneCanonicalSyncWatchSource(t *testing.T) {
+	job := Job{
+		Action: Action{Type: ActionSync, Sync: SyncAction{Source: "/srv/source", Dest: "/srv/dest", Engine: "rsync", Mode: "add"}},
+		Source: "/srv/stale",
+	}
+	normalizeV2Job(&job)
+	if job.Source != "/srv/source" || jobWatchSource(job) != "/srv/source" {
+		t.Fatalf("watch source was not normalized: source=%q helper=%q", job.Source, jobWatchSource(job))
+	}
+}
+
+func TestValidateV2JobAcceptsScriptWatchAndRejectsRelativeWatchSource(t *testing.T) {
+	job := Job{
+		Name: "watch script", Enabled: true,
+		Action:    Action{Type: ActionScript, ScriptPath: "/srv/scripts/scan.sh"},
+		Identity:  Identity{Mode: IdentityFixed, User: "root", UID: 0, Group: "root", GID: 0},
+		Execution: ExecutionPolicy{Overlap: "skip"},
+		Trigger:   TriggerWatch,
+		Source:    "/srv/incoming",
+		Scheduler: SchedulerPolicy{Owner: SchedulerSyncBridge},
+	}
+	if err := validateV2Job(job); err != nil {
+		t.Fatalf("valid script watch rejected: %v", err)
+	}
+	job.Source = "relative/path"
+	if err := validateV2Job(job); err == nil {
+		t.Fatal("relative watch source accepted")
+	}
+}
+
 func TestStartRunReturnsReservedRun(t *testing.T) {
 	app, _ := newHTTPTestApp(t, "skip")
 	s := httptest.NewServer(app.Handler())

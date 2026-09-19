@@ -501,7 +501,8 @@ func (h *watchHandle) stop() {
 }
 
 func watchSpecFor(job Job) (watchSpec, error) {
-	if job.Action.Type != ActionSync || job.Action.Sync.Source == "" {
+	source := strings.TrimSpace(jobWatchSource(job))
+	if source == "" {
 		return watchSpec{}, errors.New("watch job source is required")
 	}
 	mode := job.WatchMode
@@ -519,7 +520,7 @@ func watchSpecFor(job Job) (watchSpec, error) {
 	if poll <= 0 {
 		poll = 5 * time.Minute
 	}
-	return watchSpec{revision: job.Revision, source: job.Action.Sync.Source, mode: mode, debounce: debounce, poll: poll, globs: splitCSV(job.WatchGlob)}, nil
+	return watchSpec{revision: job.Revision, source: source, mode: mode, debounce: debounce, poll: poll, globs: splitCSV(job.WatchGlob)}, nil
 }
 
 func sameWatchSpec(a, b watchSpec) bool {

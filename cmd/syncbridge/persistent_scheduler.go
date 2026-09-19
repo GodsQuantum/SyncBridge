@@ -93,7 +93,7 @@ func (s *PersistentScheduler) applyJob(ctx context.Context, job Job, wrapper str
 		if job.Execution.TimeoutSeconds > 0 {
 			service += fmt.Sprintf("TimeoutStartSec=%ds\n", job.Execution.TimeoutSeconds)
 		}
-		pathUnit := fmt.Sprintf("[Unit]\nDescription=SyncBridge persistent watch %d\n\n[Path]\nPathModified=%s\nUnit=%s.service\n\n[Install]\nWantedBy=multi-user.target\n", job.ID, strings.TrimRight(job.Source, "/"), base)
+		pathUnit := fmt.Sprintf("[Unit]\nDescription=SyncBridge persistent watch %d\n\n[Path]\nPathModified=%s\nUnit=%s.service\n\n[Install]\nWantedBy=multi-user.target\n", job.ID, strings.TrimRight(jobWatchSource(job), "/"), base)
 		if err := atomicReplaceHostFile(filepath.Join("/etc/systemd/system", base+".service"), []byte(service), 0o644); err != nil {
 			return err
 		}

@@ -16,7 +16,7 @@ Modernize SyncBridge without changing its core deployment philosophy: one harden
 - adapter-static 3.0.10.
 - Vite 8.3.0.
 - TypeScript 6.0.3.
-- Node 26.8.2 for build tooling only.
+- Node 26.9.0 for build tooling only.
 
 ## Architecture
 `webui/` contains the SvelteKit source. It is prerendered with `adapter-static` into `cmd/syncbridge/web/`, which remains embedded into the Go binary with `go:embed`. The final runtime image contains no Node executable or `node_modules`.

@@ -37,6 +37,8 @@
       if (form.action.type === 'sync' && (!form.action.sync?.source || !form.action.sync?.dest)) throw new Error(tr(lang,'fieldPathsRequired'));
       if (form.action.type === 'command' && !form.action.command?.trim()) throw new Error(tr(lang,'fieldCommandRequired'));
       if (form.action.type === 'script' && !form.action.scriptPath?.startsWith('/')) throw new Error(tr(lang,'fieldScriptAbsolute'));
+      const watchSource = form.action.type === 'sync' ? form.action.sync?.source : form.source;
+      if (form.trigger === 'watch' && !watchSource?.trim()) throw new Error(tr(lang,'fieldWatchSourceRequired'));
       if (form.schedulerOwner === 'system' && form.trigger === 'manual') throw new Error(tr(lang,'fieldSystemTrigger'));
       await onSave(formToJobInput(form));
     } catch (e) { error = e instanceof Error ? e.message : String(e); saving = false; }

@@ -13,7 +13,7 @@ SyncBridge runs commands, scripts, and local sync jobs in the Linux host namespa
 - **Host execution** — direct `nsenter` execution into host mount/UTS/IPC/network/PID namespaces; no Docker socket.
 - **Commands, scripts, sync** — free-form commands, host scripts, and rsync/rclone execution plans.
 - **Explicit host identity** — fixed UID/GID or script-owner execution where supported; no silent root fallback.
-- **Manual, cron, watch** — SyncBridge-owned triggers with debounce, glob filtering, hybrid event/poll watches, and bounded polling work.
+- **Manual, cron, watch** — every action type (sync, script, command) can be triggered by SyncBridge-owned watches with debounce, glob filtering, hybrid event/poll fallback, and bounded polling work.
 - **Persistent host scheduling** — optional host-owned `/etc/cron.d` entries or systemd `.service/.path` units that invoke the same validated root-owned wrapper and survive a controller outage.
 - **System inventory & import** — inspect host cron/systemd/inotify triggers, safely toggle/delete/restore discovered items after server-side revalidation, and import simple rsync/rclone commands from host paths.
 - **Run lifecycle** — opaque run IDs, atomic overlap reservation, timeout, TERM→KILL stop, process-group handling, bounded logs, and retained history.

@@ -584,6 +584,29 @@ func watchJobAt(t *testing.T, id int, revision uint64, source, mode string) Job 
 	}
 }
 
+func TestWatchSpecSupportsScriptAndCommandActions(t *testing.T) {
+	for _, action := range []Action{
+		{Type: ActionScript, ScriptPath: "/srv/scripts/scan.sh"},
+		{Type: ActionCommand, Command: "true"},
+	} {
+		job := Job{
+			Revision:  3,
+			Action:    action,
+			Source:    "/srv/incoming",
+			WatchMode: "event",
+			Debounce:  2,
+			PollSec:   60,
+		}
+		spec, err := watchSpecFor(job)
+		if err != nil {
+			t.Fatalf("%s watch rejected: %v", action.Type, err)
+		}
+		if spec.source != "/srv/incoming" {
+			t.Fatalf("%s source = %q", action.Type, spec.source)
+		}
+	}
+}
+
 func TestWatchManagerResolvesHostPathBeforeWatching(t *testing.T) {
 	root := t.TempDir()
 	watcher := newFakeWatcher()

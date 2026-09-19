@@ -60,4 +60,14 @@ describe('job form conversion', () => {
     expect(input.source).toBe('/srv/source');
   });
 
+  it('preserves an explicit watch source for script jobs', () => {
+    let form = setJobActionType(newJobForm(), 'script');
+    form.trigger = 'watch';
+    form.source = '/srv/incoming';
+    form.action.scriptPath = '/srv/scripts/index.sh';
+    const input = formToJobInput(form);
+    expect(input.source).toBe('/srv/incoming');
+    expect(input.action.type).toBe('script');
+  });
+
 });

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # SyncBridge vNext — frontend compiled to static assets, Go host-executor runtime.
-FROM node:26.8.2-alpine3.24@sha256:ef24c5053d50fdc3e4e56eb4e7ddb7861874ab0fdc797046ba897581deb8e868 AS web
+FROM node:26.9.0-alpine3.24@sha256:a3b76dc450159ae5b7983a43d27aeebca64a43c296a25e1c84ba5955b8e83cce AS web
 WORKDIR /src/webui
 COPY webui/package.json webui/package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm \
