@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -581,6 +582,16 @@ func watchJobAt(t *testing.T, id int, revision uint64, source, mode string) Job 
 		Scheduler: SchedulerPolicy{Owner: SchedulerSyncBridge},
 		Action:    Action{Type: ActionSync, Sync: SyncAction{Source: source}},
 		WatchMode: mode, Debounce: 1, PollSec: 60,
+	}
+}
+
+func TestWalkPermissionPolicySkipsDeniedSubtreeOnly(t *testing.T) {
+	if got := walkPermissionPolicy(fs.ErrPermission); got != fs.SkipDir {
+		t.Fatalf("permission policy = %v, want SkipDir", got)
+	}
+	sentinel := errors.New("boom")
+	if got := walkPermissionPolicy(sentinel); !errors.Is(got, sentinel) {
+		t.Fatalf("non-permission error was swallowed: %v", got)
 	}
 }
 
