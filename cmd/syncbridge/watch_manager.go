@@ -546,13 +546,25 @@ func watchSourceExists(path string) error {
 	return nil
 }
 
+func walkPermissionPolicy(err error) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, fs.ErrPermission) {
+		return fs.SkipDir
+	}
+	return err
+}
+
 func addWatchDirectories(w watcher, root string) error {
 	return filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
-			return err
+			return walkPermissionPolicy(err)
 		}
 		if entry.IsDir() {
-			return w.Add(path)
+			if err := w.Add(path); err != nil {
+				return walkPermissionPolicy(err)
+			}
 		}
 		return nil
 	})
@@ -588,7 +600,7 @@ func directorySignatureWithLimit(ctx context.Context, root string, globs []strin
 	entries := 0
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
-			return err
+			return walkPermissionPolicy(err)
 		}
 		if err := ctx.Err(); err != nil {
 			return err
@@ -602,6 +614,9 @@ func directorySignatureWithLimit(ctx context.Context, root string, globs []strin
 		}
 		info, err := entry.Info()
 		if err != nil {
+			if errors.Is(err, fs.ErrPermission) {
+				return nil
+			}
 			return err
 		}
 		rel, err := filepath.Rel(root, path)

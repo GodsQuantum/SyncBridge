@@ -59,6 +59,7 @@ Persisted jobs and APIs always retain the logical host path. `/proc/1/root` is a
 
 - sync, script, and command actions share the same watch pipeline; sync jobs watch their transfer source while script/command jobs use the explicit watch source;
 - the parent directory is watched only to detect root recreation;
+- inaccessible subtrees are skipped instead of degrading the entire recursive watch;
 - sibling events outside the logical source do not trigger a job;
 - event and polling paths apply the same glob semantics;
 - polling is context-cancellable and has an entry budget;
