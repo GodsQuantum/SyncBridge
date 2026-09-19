@@ -7,7 +7,7 @@ SyncBridge est un petit plan de contrôle auto-hébergé qui exécute des comman
 - commandes libres, scripts hôte et jobs de synchronisation rsync/rclone ;
 - exécution hôte via `nsenter`, sans socket Docker ;
 - identité hôte explicite : UID/GID fixe ou propriétaire du script lorsque disponible ;
-- déclenchement manuel, cron SyncBridge ou surveillance de dossier ;
+- déclenchement manuel, cron SyncBridge ou surveillance de dossier pour les synchronisations, scripts et commandes ;
 - planification persistante possédée par l’hôte : `/etc/cron.d` ou unités systemd `.service/.path` utilisant le même wrapper validé ;
 - inventaire/import cron, systemd et inotify, avec toggle, suppression réversible et restauration après revalidation serveur ;
 - détection de commandes rsync/rclone dans les chemins hôte configurés par `SYNCBRIDGE_IMPORT_PATHS` ;

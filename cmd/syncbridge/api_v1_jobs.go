@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -202,6 +203,15 @@ func normalizeV2Job(job *Job) {
 	job.SchemaVersion = 2
 	job.ID = 0
 	job.Revision = 0
+	if job.Action.Type == ActionSync {
+		job.Action.Sync.Source = strings.TrimSpace(job.Action.Sync.Source)
+		job.Action.Sync.Dest = strings.TrimSpace(job.Action.Sync.Dest)
+		// Keep the compatibility source field deterministic so every scheduler
+		// backend observes the exact same watch root.
+		job.Source = job.Action.Sync.Source
+	} else {
+		job.Source = strings.TrimSpace(job.Source)
+	}
 	if job.Execution.Overlap == "" {
 		job.Execution.Overlap = "skip"
 	}
@@ -234,8 +244,14 @@ func validateV2Job(job Job) error {
 			return errors.New("system cron expressions must have exactly five fields")
 		}
 	}
-	if job.Trigger == TriggerWatch && strings.TrimSpace(job.Source) == "" {
-		return errors.New("watch trigger requires a source directory")
+	if job.Trigger == TriggerWatch {
+		source := strings.TrimSpace(jobWatchSource(job))
+		if source == "" {
+			return errors.New("watch trigger requires a source directory")
+		}
+		if err := validateAbsoluteCanonicalPath(source); err != nil {
+			return fmt.Errorf("watch source: %w", err)
+		}
 	}
 	if job.Execution.Overlap != "skip" && job.Execution.Overlap != "queue-latest" {
 		return errors.New("overlap must be skip or queue-latest")
