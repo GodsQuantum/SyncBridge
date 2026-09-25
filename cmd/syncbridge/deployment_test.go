@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -176,12 +177,12 @@ func TestPublishWorkflowPinsActionsAndGatesImage(t *testing.T) {
 	}
 	s := string(b)
 	for _, want := range []string{
-		"actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
-		"actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e",
-		"actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
-		"docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8",
-		"docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e",
-		"docker/login-action@dbcb813823bdd20940b903addbd779551569679f",
+		"actions/checkout@",
+		"actions/setup-go@",
+		"actions/setup-node@",
+		"docker/setup-qemu-action@",
+		"docker/setup-buildx-action@",
+		"docker/login-action@",
 		"docker compose --env-file deploy/syncbridge.env.example -f deploy/compose.yaml config",
 		"go mod verify",
 		"golang.org/x/vuln/cmd/govulncheck@v1.8.0",
@@ -207,18 +208,27 @@ func TestPublishWorkflowPinsActionsAndGatesImage(t *testing.T) {
 			t.Errorf("publish workflow missing %q", want)
 		}
 	}
+	usesPattern := regexp.MustCompile(`(?m)^\s*uses:\s*([^\s#]+)`)
+	fullSHA := regexp.MustCompile(`^[^@\s]+@[0-9a-f]{40}$`)
+	matches := usesPattern.FindAllStringSubmatch(s, -1)
+	if len(matches) == 0 {
+		t.Fatal("publish workflow contains no action references")
+	}
+	for _, match := range matches {
+		ref := match[1]
+		if strings.HasPrefix(ref, "./") {
+			continue
+		}
+		if !fullSHA.MatchString(ref) {
+			t.Errorf("publish workflow action %q must be pinned to a full 40-character commit SHA", ref)
+		}
+	}
 	for _, forbidden := range []string{
-		"actions/checkout@v",
-		"actions/setup-go@v",
-		"actions/setup-node@v",
-		"docker/setup-qemu-action@v",
-		"docker/setup-buildx-action@v",
-		"docker/login-action@v",
 		"docker/metadata-action@",
 		"docker/build-push-action@",
 	} {
 		if strings.Contains(s, forbidden) {
-			t.Errorf("publish workflow uses mutable action reference %q", forbidden)
+			t.Errorf("publish workflow uses forbidden helper action %q", forbidden)
 		}
 	}
 }
