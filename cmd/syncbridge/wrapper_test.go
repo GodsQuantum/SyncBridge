@@ -15,6 +15,19 @@ import (
 	"time"
 )
 
+func TestUutilsWrapperRendersAndInstallsAfterCapabilityProbe(t *testing.T) {
+	plan := goldenFixedSyncPlan()
+	plan.HostTools.Profile = "uutils"
+	if _, err := NewWrapperRenderer().Render(plan); err != nil {
+		t.Fatalf("uutils wrapper render: %v", err)
+	}
+	dir := "/var/lib/syncbridge/instances/node-a/jobs/8"
+	runner := &recordingStoreRunner{tempPath: dir + "/.run.sh.tmp-uutils1234"}
+	if _, err := NewWrapperStore(runner, NewWrapperRenderer()).Install(context.Background(), plan); err != nil {
+		t.Fatalf("uutils wrapper install: %v", err)
+	}
+}
+
 func TestWrapperStoreInstallsAtomicallyThroughHostRunner(t *testing.T) {
 	plan := goldenFixedSyncPlan()
 	dir := "/var/lib/syncbridge/instances/node-a/jobs/8"

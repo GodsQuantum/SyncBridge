@@ -162,7 +162,7 @@ func (s *WrapperStore) requireCanonicalHostTarget(ctx context.Context, tools Hos
 }
 
 func validateStoreTools(tools HostToolPaths) error {
-	if tools.Profile != "gnu" && tools.Profile != "busybox" {
+	if tools.Profile != "gnu" && tools.Profile != "busybox" && tools.Profile != "uutils" {
 		return errors.New("host toolchain profile is invalid")
 	}
 	for _, path := range []string{tools.Test, tools.Readlink, tools.Stat, tools.Mkdir, tools.Chown, tools.Chmod, tools.Mktemp, tools.Tee, tools.Sync, tools.Mv, tools.Rm} {
@@ -432,7 +432,7 @@ func (r WrapperRenderer) Render(plan ExecutionPlan) ([]byte, error) {
 }
 
 func (r WrapperRenderer) validate(plan ExecutionPlan) error {
-	if plan.HostTools.Profile != "gnu" && plan.HostTools.Profile != "busybox" {
+	if plan.HostTools.Profile != "gnu" && plan.HostTools.Profile != "busybox" && plan.HostTools.Profile != "uutils" {
 		return errors.New("wrapper host toolchain profile is invalid")
 	}
 	for name, path := range map[string]string{
