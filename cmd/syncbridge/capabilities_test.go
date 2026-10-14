@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"os/exec"
 	"reflect"
 	"slices"
 	"strings"
@@ -80,7 +81,7 @@ func TestHostCommandRunnerUsesOnlyExplicitLauncherEnvironment(t *testing.T) {
 }
 
 func TestCapabilitiesHostToolchainProfiles(t *testing.T) {
-	for _, profile := range []string{"gnu", "busybox"} {
+	for _, profile := range []string{"gnu", "busybox", "uutils"} {
 		t.Run(profile, func(t *testing.T) {
 			runner := newSemanticToolchainRunner(profile)
 			report := NewCapabilityService(runner).Probe(context.Background())
@@ -122,6 +123,19 @@ func TestCapabilitiesHostToolchainProfiles(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// Live check on hosts using Ubuntu's Rust coreutils; skip elsewhere.
+func TestCapabilitiesActualUutilsHost(t *testing.T) {
+	out, err := exec.Command("/usr/bin/stat", "--version").Output()
+	if err != nil || !bytes.Contains(out, []byte("uutils coreutils")) {
+		t.Skip("host does not use uutils")
+	}
+	runner := newHostCommandRunner(func(argv ...string) []string { return argv })
+	result := NewCapabilityService(runner).Probe(context.Background()).ByCode(CapHostToolchain)
+	if result.Status != CapabilityAvailable || result.Details["profile"] != "uutils" {
+		t.Fatalf("live uutils toolchain: %#v", result)
 	}
 }
 
@@ -186,7 +200,7 @@ func TestCapabilitiesBlockHostToolchainWithoutStoreSyntaxContract(t *testing.T) 
 		"chown_owner", "chown_file", "chmod_mode", "chmod_file",
 		"rm_force", "rm_file", "rmdir_directory",
 	}
-	for _, profile := range []string{"gnu", "busybox"} {
+	for _, profile := range []string{"gnu", "busybox", "uutils"} {
 		for _, contract := range contracts {
 			t.Run(profile+"/"+contract, func(t *testing.T) {
 				runner := newSemanticToolchainRunner(profile)
@@ -385,7 +399,13 @@ func (r *semanticToolchainRunner) RunInput(_ context.Context, _ []byte, argv ...
 		if r.profile == "busybox" {
 			return CommandResult{Stdout: []byte("BusyBox v1.37 stat\n")}
 		}
+		if r.profile == "uutils" {
+			return CommandResult{Stdout: []byte("Display file or file system status.\n")}
+		}
 		return CommandResult{Stdout: []byte("GNU coreutils stat\n")}
+	}
+	if argv[0] == r.paths.Stat && slices.Contains(argv, "--version") && r.profile == "uutils" {
+		return CommandResult{Stdout: []byte("stat (uutils coreutils) 0.10.0\n")}
 	}
 	if argv[0] == r.paths.Stat {
 		return CommandResult{Stdout: []byte("1:2:81c0:0:0\n")}
@@ -415,7 +435,7 @@ func (r *semanticToolchainRunner) RunInput(_ context.Context, _ []byte, argv ...
 }
 
 func (r *semanticToolchainRunner) toolHelp(tool string) string {
-	help := map[string]map[string]string{
+	helpProfiles := map[string]map[string]string{
 		"gnu": {
 			"mkdir":  "Usage: mkdir [OPTION]... DIRECTORY...\n",
 			"mktemp": "Usage: mktemp [OPTION]... [TEMPLATE]\n",
@@ -438,7 +458,12 @@ func (r *semanticToolchainRunner) toolHelp(tool string) string {
 			"rm":     "Usage: rm [-irf] FILE...\n",
 			"rmdir":  "Usage: rmdir [-p] DIRECTORY...\n",
 		},
-	}[r.profile][tool]
+	}
+	profile := r.profile
+	if profile == "uutils" {
+		profile = "gnu"
+	}
+	help := helpProfiles[profile][tool]
 	replacements := map[string]map[string]string{
 		"mkdir_directory":        {"DIRECTORY": ""},
 		"mktemp_template":        {"TEMPLATE": ""},
