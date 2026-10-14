@@ -138,6 +138,8 @@ func (s *CapabilityService) discoverHostTools(ctx context.Context) (HostToolPath
 		profile = "busybox"
 	} else if bytes.Contains(profileHelp, []byte("GNU coreutils")) {
 		profile = "gnu"
+	} else if version := s.runner.Run(ctx, values["stat"], "--version"); version.Err == nil && bytes.Contains(version.Stdout, []byte("uutils coreutils")) {
+		profile = "uutils"
 	} else {
 		return HostToolPaths{}, errors.New("host toolchain profile unsupported")
 	}
@@ -259,7 +261,7 @@ func (r CapabilityReport) HostTools() (HostToolPaths, error) {
 		values[name] = value
 	}
 	profile := result.Details["profile"]
-	if profile != "gnu" && profile != "busybox" {
+	if profile != "gnu" && profile != "busybox" && profile != "uutils" {
 		return HostToolPaths{}, errors.New("host toolchain profile is invalid")
 	}
 	return HostToolPaths{
