@@ -24,3 +24,9 @@ No new protocol, storage mount, Docker bind, privilege extension, rewrite to Rus
 - `https://github.com/DietrichGebert/ponytail` — smallest secure complete diff.
 - `https://github.com/multica-ai/andrej-karpathy-skills` — test-driven, no speculative refactor.
 - Superpowers test-driven-development, systematic-debugging and verification-before-completion.
+
+## Security update (14 October 2026)
+GitHub CI's govulncheck detected vulnerable Go 1.27.1 standard-library paths.
+Go 1.27.2 (released 8 October 2026) patches these advisories.
+Pinned the official multiarchitecture Go 1.27.2 Alpine 3.24 image digest, CI matrix,
+module toolchain, and deployment contract test; no vulnerability suppression.

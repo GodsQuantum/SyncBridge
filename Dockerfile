@@ -8,7 +8,7 @@ RUN --mount=type=cache,target=/root/.npm \
 COPY webui/ ./
 RUN mkdir -p /src/cmd/syncbridge/web && npm run build
 
-FROM golang:1.27.1-alpine3.24@sha256:f86f1a6701e3dcc445fec097a42f78b758f15950ccf032c2d3e54e2754d32fdb AS build
+FROM golang:1.27.2-alpine3.24@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \

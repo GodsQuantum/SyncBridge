@@ -6,7 +6,7 @@
 
 **Architecture:** Add a guarded read-only `stat --version` fallback to the existing toolchain probe, and add one supported profile constant with explicit semantic checks. Keep all existing security constraints and jobs unchanged.
 
-**Tech Stack:** Go 1.27.1, existing test runner and GitHub Actions, Docker/Svelte 5 baseline.
+**Tech Stack:** Go 1.27.2, existing test runner and GitHub Actions, Docker/Svelte 5 baseline.
 
 **Spec:** `docs/superpowers/specs/2026-10-14-uutils-toolchain-compatibility-design.md`
 
