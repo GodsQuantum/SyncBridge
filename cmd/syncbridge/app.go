@@ -17,15 +17,14 @@ import (
 )
 
 type App struct {
-	Jobs               *JobRepository
-	Runs               *RunService
-	Scheduler          *Scheduler
-	Watches            *WatchManager
-	Capabilities       *CapabilityService
-	CapabilityReport   CapabilityReport
-	System             *SystemService
-	Persistent         *PersistentScheduler
-	UpdateProgressPath string
+	Jobs             *JobRepository
+	Runs             *RunService
+	Scheduler        *Scheduler
+	Watches          *WatchManager
+	Capabilities     *CapabilityService
+	CapabilityReport CapabilityReport
+	System           *SystemService
+	Persistent       *PersistentScheduler
 }
 
 func (a *App) Handler() http.Handler {
@@ -35,7 +34,6 @@ func (a *App) Handler() http.Handler {
 	mux.HandleFunc("/api/v1/runs/", a.handleV1Run)
 	mux.HandleFunc("/api/v1/events", a.handleV1Events)
 	mux.HandleFunc("/api/v1/capabilities", a.handleV1Capabilities)
-	mux.HandleFunc("/api/v1/update-progress", a.handleUpdateProgress)
 	mux.HandleFunc("/api/jobs", a.handleLegacyJobs)
 	mux.HandleFunc("/api/jobs/", a.handleLegacyJobByID)
 	mux.HandleFunc("/api/status", a.handleLegacyStatus)
@@ -268,7 +266,7 @@ func NewProductionApp(ctx context.Context, configDir string, owner FileOwner) (*
 	runs := NewRunService(repo, compiler, store, NewHostExecutor(), LogLimits{MaxBytes: 4 << 20, MaxLineBytes: MaxExecutionLogLineBytes, MaxRuns: 200, MaxAge: 24 * time.Hour})
 	scheduler := NewScheduler(ctx, runs)
 	watches := NewWatchManager(ctx, runs)
-	app := &App{Jobs: repo, Runs: runs, Scheduler: scheduler, Watches: watches, Capabilities: caps, CapabilityReport: report, System: NewSystemService(runner), Persistent: NewPersistentScheduler(instanceID, compiler, store, runner), UpdateProgressPath: filepath.Join(configDir, "update-progress.json")}
+	app := &App{Jobs: repo, Runs: runs, Scheduler: scheduler, Watches: watches, Capabilities: caps, CapabilityReport: report, System: NewSystemService(runner), Persistent: NewPersistentScheduler(instanceID, compiler, store, runner)}
 	if err := app.reconcileTriggers(); err != nil {
 		scheduler.Close()
 		watches.Close()
