@@ -146,3 +146,21 @@ The publish workflow additionally validates the rendered Compose model, builds a
 ## License
 
 [MIT](LICENSE)
+
+## Read-only external maintenance progress
+
+SyncBridge can display a maintenance/update dashboard without executing upgrades itself.
+An external authorized controller may atomically publish a **non-sensitive** JSON snapshot
+at `$SB_DATA/update-progress.json`. The authenticated `GET /api/v1/update-progress`
+endpoint reads this file without command execution, control endpoints, credentials or
+background tasks. The UI displays updates per target (including pending, available,
+deployed, blocked, local build), with filters and browser-only refresh every 30 seconds.
+Absence of the file yields an empty dashboard. The maintenance feed is **not** a job
+and should not be confused with SyncBridge's native cron/systemd job management.
+Docker image update and deployment should remain with the installed Docker manager
+(e.g. Komodo) rather than duplicating its scheduler here.
+
+The JSON schema is versioned; e.g.:
+```json
+{"schemaVersion":1,"title":"Cloud9 - Mises a jour","updatedAt":"2026-11-06T15:00:00Z","backupLocalFrozen":true,"counts":{"available":1},"rows":[{"id":"ct210:example","target":"CT210","kind":"Docker","component":"example","image":"example:latest","status":"available","note":"Image staged; not deployed","checkedAt":null}]}
+```

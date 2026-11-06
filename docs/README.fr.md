@@ -76,3 +76,15 @@ npm run check
 npm run test:run
 npm run build
 ```
+
+## Tableau des mises à jour externes, en lecture seule
+
+SyncBridge affiche les contrôles de maintenance publiés sous `$SB_DATA/update-progress.json`
+par un contrôleur autorisé. Route authentifiée `GET /api/v1/update-progress`, jamais
+d'écriture ou d'exécution : le tableau permet de filtrer les éléments en attente,
+images disponibles, vérifications réalisées et blocages, avec rafraîchissement côté
+navigateur seulement (30 secondes lorsque le panneau est ouvert).
+
+Ce suivi **n'est pas un moteur de mise à jour** et ne remplace pas Komodo pour
+Docker. Il n'ajoute aucun timer ou service hôte, ne stocke pas de mots de passe et
+n'active pas de sauvegarde. Sans fichier de suivi, le panneau est vide.
