@@ -27,6 +27,34 @@
   let openHistory: Record<number,boolean> = {}, histories: Record<number,RunRecord[]> = {};
   let toastMessage='', toastType=''; let toastTimer: ReturnType<typeof setTimeout>;
   let events: EventSource | null = null;
+  type UpdateProgressRow = {id:string; target:string; kind:string; component:string; image:string; status:string; note:string; checkedAt:string|null};
+  type UpdateProgress = {schemaVersion:number; title:string; updatedAt:string; backupLocalFrozen:boolean; counts:Record<string,number>; rows:UpdateProgressRow[]};
+  let updateProgress: UpdateProgress|null = null;
+  let updatesOpen = true, updatesFilter = 'attention', updatesError = '';
+  $: displayedUpdates = (updateProgress?.rows ?? []).filter(row =>
+    updatesFilter==='all' ||
+    (updatesFilter==='attention' && ['available','blocked','checking'].includes(row.status)) ||
+    row.status===updatesFilter
+  );
+  function updateStatusLabel(status:string):string {
+    const labels:Record<string,[string,string]> = {
+      'up-to-date':['Tag identique','Matching tag'],
+      'pinned':['Version épinglée','Pinned version'],
+      'available':['Image disponible','New image'],
+      'blocked':['Bloqué','Blocked'],
+      'deployed':['Déployé','Deployed'],
+      'pending':['À vérifier','Pending'],
+      'checking':['Vérification','Checking'],
+      'local-build':['Build local','Local build']
+    };
+    return labels[status] ? labels[status][lang==='fr'?0:1] : status;
+  }
+  async function loadUpdates() {
+    try {
+      updateProgress = await new ApiClient().request<UpdateProgress>('/api/v1/update-progress', {cache:'no-store'});
+      updatesError = '';
+    } catch (e) { updatesError = e instanceof Error ? e.message : String(e); }
+  }
 
   $: rsync = caps.results.find(x=>x.code==='rsync')?.status === 'available';
   $: rclone = caps.results.find(x=>x.code==='rclone')?.status === 'available';
@@ -61,7 +89,7 @@
   async function logout(){try{await fetch('/api/auth/logout',{method:'POST'})}finally{location.replace('/')}}
   function toggleLang(){lang=lang==='en'?'fr':'en';localStorage.setItem('sb_lang',lang);document.documentElement.lang=lang}
 
-  onMount(()=>{lang=(localStorage.getItem('sb_lang') as Lang)||'en';document.documentElement.lang=lang;loadCore();loadRemotes();return()=>events?.close()});
+  onMount(()=>{lang=(localStorage.getItem('sb_lang') as Lang)||'en';document.documentElement.lang=lang;loadCore();loadRemotes();void loadUpdates();const updateTimer=setInterval(()=>{if(updatesOpen)void loadUpdates()},30000);return()=>{events?.close();clearInterval(updateTimer)}});
 </script>
 
 <svelte:head><title>SyncBridge</title><meta name="description" content="Host-native sync and automation control plane"></svelte:head>
@@ -83,6 +111,53 @@
 
   {#if error}<div class="error-banner">{error} <button class="btn sm ghost" on:click={loadCore}>{tr(lang,'retry')}</button></div>{/if}
   <div class="toolbar"><div class="tabs">{#each [['all',tr(lang,'all')],['sync',tr(lang,'sync')],['commands',tr(lang,'commands')],['cron',tr(lang,'cron')],['watch',tr(lang,'watch')],['disabled',tr(lang,'disabled')]] as tab}<button class="tab" class:sel={filter===tab[0]} on:click={()=>filter=tab[0]}>{tab[1]} <span class="cnt">{counts[tab[0] as keyof typeof counts]}</span></button>{/each}</div><input class="search" bind:value={query} type="search" placeholder={tr(lang,'search')}></div>
+  <section class="updates-panel" aria-label="Cloud9 update progress">
+    <header class="updates-heading">
+      <button class="btn ghost sm" on:click={()=>updatesOpen=!updatesOpen} aria-expanded={updatesOpen}>
+        {updatesOpen?'▾':'▸'} {lang==='fr'?'Mises à jour Cloud9':'Cloud9 updates'}
+      </button>
+      {#if updateProgress}
+        <span class="updates-summary">
+          {updateProgress.counts.deployed ?? 0} {lang==='fr'?'déployés':'deployed'} ·
+          {updateProgress.counts['up-to-date'] ?? 0} {lang==='fr'?'tags identiques':'matching tags'} ·
+          {updateProgress.counts.available ?? 0} {lang==='fr'?'à déployer':'available'} ·
+          {updateProgress.counts.blocked ?? 0} {lang==='fr'?'bloqués':'blocked'}
+        </span>
+      {/if}
+      <span class="flex"></span>
+      <button class="btn ghost sm" on:click={()=>loadUpdates()}>{lang==='fr'?'Actualiser':'Refresh'}</button>
+    </header>
+    {#if updatesOpen}
+      {#if updateProgress?.backupLocalFrozen}<p class="updates-warning">backup-local : {lang==='fr'?'gelé, aucune écriture autorisée':'frozen, no writes permitted'}</p>{/if}
+      {#if updatesError}<p class="updates-warning">{updatesError}</p>{/if}
+      <div class="updates-controls">
+        <span>{lang==='fr'?'Dernier contrôle':'Last update'} : {updateProgress?.updatedAt ? new Date(updateProgress.updatedAt).toLocaleString(lang==='fr'?'fr-FR':'en-US') : '—'}</span>
+        <select bind:value={updatesFilter} aria-label={lang==='fr'?'Filtrer les mises à jour':'Filter updates'}>
+          <option value="attention">{lang==='fr'?'À traiter':'Needs attention'}</option>
+          <option value="all">{lang==='fr'?'Tout':'All'}</option>
+          <option value="available">{lang==='fr'?'Image prête':'Image available'}</option>
+          <option value="pending">{lang==='fr'?'À vérifier':'Pending'}</option>
+          <option value="checking">{lang==='fr'?'En cours':'Checking'}</option>
+          <option value="deployed">{lang==='fr'?'Déployé':'Deployed'}</option>
+          <option value="up-to-date">{lang==='fr'?'Tag identique':'Matching tag'}</option>
+          <option value="pinned">{lang==='fr'?'Version épinglée':'Pinned version'}</option>
+          <option value="blocked">{lang==='fr'?'Bloqué':'Blocked'}</option>
+          <option value="local-build">{lang==='fr'?'Build local':'Local build'}</option>
+        </select>
+      </div>
+      <div class="updates-scroll">
+        <table class="updates-table">
+          <thead><tr><th>{lang==='fr'?'Cible':'Target'}</th><th>{lang==='fr'?'Composant':'Component'}</th><th>{lang==='fr'?'État':'State'}</th><th>{lang==='fr'?'Détail':'Details'}</th></tr></thead>
+          <tbody>
+            {#each displayedUpdates as item (item.id)}
+              <tr><td>{item.target}</td><td title={item.image}>{item.component}</td><td><span class="update-state" data-status={item.status}>{updateStatusLabel(item.status)}</span></td><td>{item.note}</td></tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+      {#if !displayedUpdates.length}<p class="updates-empty">{lang==='fr'?'Aucune entrée dans ce filtre.':'No entries for this filter.'}</p>{/if}
+    {/if}
+  </section>
   <div class="section-h">{tr(lang,'jobs')}</div>
   <main class="jobs">
     {#if loading}{#each [1,2,3] as _}<div class="skeleton"></div>{/each}{:else if !visible.length}<div class="empty"><div class="big">⇄</div><b>{tr(lang,'empty')}</b><p>{tr(lang,'emptyHint')}</p><button class="btn pri" on:click={()=>openNew()}>＋ {tr(lang,'newJob')}</button></div>{:else}{#each visible as job (job.id)}<JobCard {job} run={runState.byJob[job.id]} logs={runState.byJob[job.id] ? (runState.logs[runState.byJob[job.id].id] ?? []) : []} records={histories[job.id] ?? []} historyOpen={!!openHistory[job.id]} {lang} onRun={doRun} onStop={doStop} onEdit={openEdit} onClone={clone} onToggle={toggle} onDelete={remove} onHistory={toggleHistory}/>{/each}{/if}
@@ -94,3 +169,23 @@
 {#if remotesOpen}<RemotesModal client={new ApiClient()} items={remoteList} {lang} onReload={loadRemotes} onClose={()=>remotesOpen=false}/>{/if}
 {#if settingsOpen}<SettingsModal client={new ApiClient()} current={settings} {lang} onSaved={(value)=>settings=value} onClose={()=>settingsOpen=false}/>{/if}
 <div class="toast" class:show={!!toastMessage} class:err={toastType==='err'} class:ok={toastType==='ok'}>{toastMessage}</div>
+
+<style>
+  .updates-panel {margin: 0 24px 18px; padding: 10px 14px; border: 1px solid var(--border, #3a4656); border-radius: 12px; background: var(--surface, rgba(127,127,127,.04));}
+  .updates-heading {display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .updates-summary {font-size:.84rem;opacity:.85}
+  .updates-warning {color:var(--warn, #d4a64a);font-size:.82rem;margin:8px 0}
+  .updates-controls {display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:.8rem;opacity:.85;margin:10px 0}
+  .updates-controls select {color:inherit;background:transparent;border:1px solid #667085;border-radius:6px;padding:5px}
+  .updates-scroll {max-height:310px;overflow:auto}
+  .updates-table {width:100%;border-collapse:collapse;text-align:left;font-size:.8rem}
+  .updates-table th,.updates-table td {padding:7px 9px;border-bottom:1px solid rgba(127,127,127,.18);vertical-align:top}
+  .updates-table th {position:sticky;top:0;background:var(--bg, #17202c)}
+  .updates-table td:last-child {min-width:200px;overflow-wrap:anywhere}
+  .update-state {white-space:nowrap;border-radius:5px;padding:2px 5px;background:rgba(127,127,127,.16)}
+  .update-state[data-status="deployed"],.update-state[data-status="up-to-date"] {color:#65c98b}
+  .update-state[data-status="blocked"] {color:#eda283}
+  .update-state[data-status="available"],.update-state[data-status="pinned"] {color:#a7c4ff}
+  .updates-empty {font-size:.8rem;opacity:.7}
+  @media (max-width:650px) { .updates-panel {margin:0 10px 16px}.updates-table td:last-child {min-width:120px} }
+</style>
